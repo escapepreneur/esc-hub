@@ -22,12 +22,13 @@ a.live{font-size:13px;color:var(--teal)}
 .login{max-width:380px;margin:12vh auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px;text-align:center}
 .login input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;margin:12px 0}
 .muted{color:var(--muted);font-size:13px}
+.boot{max-width:380px;margin:14vh auto;text-align:center;color:var(--muted);font-size:14px}
 .panel{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9}.panel.open{display:flex}
 .sheet{background:#fff;width:min(820px,94vw);height:90vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .sheet .top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
 iframe{flex:1;border:0;width:100%}
 </style></head><body>
-<div id="app"></div>
+<div id="app"><div class="boot">Loading the hub…</div></div>
 <div class="panel" id="panel"><div class="sheet"><div class="top"><strong id="st"></strong><button onclick="document.getElementById('panel').classList.remove('open')">✕</button></div><iframe id="frame"></iframe></div></div>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -36,22 +37,42 @@ const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const API = SUPABASE_URL + '/functions/v1/hub';
 const sb = createClient(SUPABASE_URL, ANON_KEY);
 const app = document.getElementById('app');
+const esc = s => (s==null?'':String(s));
 const wrap = h => "<!doctype html><meta charset=utf-8><link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap' rel=stylesheet><style>body{font-family:Poppins,sans-serif;max-width:720px;margin:24px auto;padding:0 18px;color:#222;font-size:16px;line-height:1.6}h2{font-size:22px;margin-top:1.5em}img{display:block;max-width:100%;height:auto;margin:1.2em auto}</style>"+h;
 const api = async (q,opts={}) => { const {data:{session}}=await sb.auth.getSession(); return fetch(API+q,{...opts,headers:{...(opts.headers||{}),Authorization:'Bearer '+(session?.access_token||'')}}); };
 
+function loginView(msg){ app.innerHTML = "<div class=login><h2 style='color:#24A7A8'>ESC Hub · Software Updates</h2><p class=muted>Sign in with your email — we'll send a magic link.</p><input id=em type=email placeholder='you@escapepreneur.com'><button onclick='window._login()' style='width:100%'>Send magic link</button><p class=muted id=msg>"+esc(msg)+"</p></div>"; }
+function errorView(e){ app.innerHTML = "<div class=login><h2 style='color:#24A7A8'>ESC Hub · Software Updates</h2><p class=muted>Couldn't load the hub just now.</p><p class=muted>"+esc(e)+"</p><button onclick='location.reload()' style='width:100%'>Reload</button></div>"; }
+
+let rendering=false, again=false;
 async function render(){
-  const {data:{session}} = await sb.auth.getSession();
-  if(!session){ app.innerHTML = "<div class=login><h2 style='color:#24A7A8'>ESC Hub · Software Updates</h2><p class=muted>Sign in with your email — we'll send a magic link.</p><input id=em type=email placeholder='you@escapepreneur.com'><button onclick='window._login()' style='width:100%'>Send magic link</button><p class=muted id=msg></p></div>"; return; }
-  app.innerHTML = "<header><h1>ESC Hub · Software Updates</h1><span id=round class=round>…</span></header><main id=list>Loading…</main>";
-  const q = await (await api('?action=queue')).json();
-  const r=document.getElementById('round'); r.textContent='Community round-up: '+q.communityLive+'/'+q.communityThreshold+' live'; r.className='round'+(q.communityLive>=q.communityThreshold?' ready':'');
-  document.getElementById('list').innerHTML = q.items.map(card).join('');
+  if(rendering){ again=true; return; }
+  rendering=true;
+  try{ await draw(); }
+  catch(e){ errorView(e && e.message || e); }
+  finally{ rendering=false; if(again){ again=false; render(); } }
 }
-function card(it){ const pub=it.status==='Published'; const chips=it.categories.map(c=>'<span class=chip>'+c+'</span>').join('')+(it.community?'<span class="chip comm">Community</span>':'');
-  return "<div class=card><h2>"+it.title+"</h2><div class=row><span class='pill "+(pub?'published':'draft')+"'>"+it.status+"</span>"+chips+"</div>"+(it.flag?"<div class=flag>⚑ "+it.flag+"</div>":"")+"<div class=actions><button onclick=\"window._review('"+it.key+"')\">Review</button>"+(pub?"<a class=live href='"+it.liveUrl+"' target=_blank>View live ↗</a>":"<button class=publish "+(it.flag?'disabled':'')+" onclick=\"window._pub('"+it.key+"',this)\">Publish</button>")+"</div></div>"; }
-window._login=async()=>{ const email=document.getElementById('em').value; const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}}); document.getElementById('msg').textContent=error?error.message:'Check your inbox for the link.'; };
-window._review=async(key)=>{ const d=await (await api('?action=post&key='+key)).json(); document.getElementById('st').textContent=d.title; document.getElementById('frame').srcdoc=wrap((d.flag?"<div style='background:#fff8e6;border:1px solid #f0d98c;color:#b8860b;padding:10px;border-radius:8px;margin-bottom:16px'>⚑ "+d.flag+"</div>":"")+"<h1>"+d.title+"</h1>"+(d.body_html||'')); document.getElementById('panel').classList.add('open'); };
-window._pub=async(key,btn)=>{ if(!confirm('Publish this post live?'))return; btn.disabled=true;btn.textContent='Publishing…'; const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key})})).json(); if(res.ok){render()}else{alert('Failed: '+(res.error||'?'));btn.disabled=false;btn.textContent='Publish';} };
+async function draw(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){
+    const hp = new URLSearchParams(location.hash.slice(1));
+    const err = hp.get('error_description');
+    loginView(err ? decodeURIComponent(err.replace(/\+/g,' '))+' — request a new link below.' : '');
+    return;
+  }
+  app.innerHTML = "<header><h1>ESC Hub · Software Updates</h1><span id=round class=round>…</span></header><main id=list>Loading…</main>";
+  const res = await api('?action=queue');
+  if(res.status===401){ await sb.auth.signOut(); return; }  // stale session -> back to login
+  const q = await res.json();
+  if(q.error) throw new Error(q.error);
+  const r=document.getElementById('round'); r.textContent='Community round-up: '+q.communityLive+'/'+q.communityThreshold+' live'; r.className='round'+(q.communityLive>=q.communityThreshold?' ready':'');
+  document.getElementById('list').innerHTML = (q.items||[]).map(card).join('') || "<p class=muted>No posts in the queue yet.</p>";
+}
+function card(it){ const pub=it.status==='Published'; const chips=(it.categories||[]).map(c=>'<span class=chip>'+esc(c)+'</span>').join('')+(it.community?'<span class="chip comm">Community</span>':'');
+  return "<div class=card><h2>"+esc(it.title)+"</h2><div class=row><span class='pill "+(pub?'published':'draft')+"'>"+esc(it.status)+"</span>"+chips+"</div>"+(it.flag?"<div class=flag>⚑ "+esc(it.flag)+"</div>":"")+"<div class=actions><button onclick=\"window._review('"+it.key+"')\">Review</button>"+(pub?"<a class=live href='"+esc(it.liveUrl)+"' target=_blank>View live ↗</a>":"<button class=publish "+(it.flag?'disabled':'')+" onclick=\"window._pub('"+it.key+"',this)\">Publish</button>")+"</div></div>"; }
+window._login=async()=>{ const email=document.getElementById('em').value; const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}}); document.getElementById('msg').textContent=error?error.message:'Check your inbox for the link.'; };
+window._review=async(key)=>{ try{ const d=await (await api('?action=post&key='+key)).json(); document.getElementById('st').textContent=d.title||'Preview'; document.getElementById('frame').srcdoc=wrap((d.flag?"<div style='background:#fff8e6;border:1px solid #f0d98c;color:#b8860b;padding:10px;border-radius:8px;margin-bottom:16px'>⚑ "+esc(d.flag)+"</div>":"")+"<h1>"+esc(d.title)+"</h1>"+(d.body_html||'')); document.getElementById('panel').classList.add('open'); }catch(e){ alert('Could not load preview: '+(e.message||e)); } };
+window._pub=async(key,btn)=>{ if(!confirm('Publish this post live?'))return; btn.disabled=true;btn.textContent='Publishing…'; try{ const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key})})).json(); if(res.ok){render()}else{alert('Failed: '+(res.error||'?'));btn.disabled=false;btn.textContent='Publish';} }catch(e){ alert('Failed: '+(e.message||e));btn.disabled=false;btn.textContent='Publish'; } };
 sb.auth.onAuthStateChange(()=>render());
 render();
 </script></body></html>
