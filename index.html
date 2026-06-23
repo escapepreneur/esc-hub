@@ -23,8 +23,12 @@ main{max-width:920px;margin:14px auto 32px;padding:0 16px;display:grid;gap:12px}
 .date{font-size:12px;color:var(--muted)}
 .right{display:flex;gap:8px;align-items:center;flex-shrink:0}
 button{font-family:inherit;font-size:14px;border-radius:8px;padding:8px 16px;border:1px solid var(--teal);cursor:pointer;background:#fff;color:var(--teal)}
-button.publish{background:var(--teal);color:#fff;border:0}button:disabled{opacity:.45;cursor:not-allowed}
-a.live{font-size:13px;color:var(--teal);white-space:nowrap}
+button:disabled{opacity:.45;cursor:not-allowed}
+.right button,.right a.live{min-width:104px;text-align:center;padding:8px 14px}
+.right a.live{font-size:14px;border-radius:8px;border:1px solid var(--teal);background:var(--teal);color:#fff;text-decoration:none;display:inline-block;line-height:1.45;white-space:nowrap}
+.right button.publish{background:var(--teal);color:#fff;border:1px solid var(--teal)}
+.right button.confirm{background:#c0392b;border-color:#c0392b;color:#fff}
+.clink{font-size:12px;color:var(--teal)}
 .login{max-width:380px;margin:12vh auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px;text-align:center}
 .login input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;margin:12px 0}
 .muted{color:var(--muted);font-size:13px}
@@ -98,19 +102,26 @@ function renderList(){
 }
 function card(it){ const pub=it.status==='Published';
   const chips=(it.categories||[]).map(c=>'<span class=chip>'+esc(c)+'</span>').join('')+(it.community?'<span class="chip comm">Community</span>':'');
-  const date = pub ? (it.publishedAt?'Published '+fmt(it.publishedAt):'Published') : (it.changelogDate?'Changelog '+fmt(it.changelogDate):'');
+  const dtxt = pub ? (it.publishedAt?'Published '+fmt(it.publishedAt):'Published') : (it.changelogDate?'Changelog '+fmt(it.changelogDate):'Changelog');
+  const date = (!pub && it.sourceLink) ? "<a class=clink href='"+esc(it.sourceLink)+"' target=_blank>"+dtxt+" ↗</a>" : "<span class=date>"+dtxt+"</span>";
   const flag = it.flag?"<span class=flagchip>⚑ "+esc(it.flag)+"</span>":"";
   const actions = "<button onclick=\"window._review('"+it.key+"')\">Review</button>"
     + (pub ? "<a class=live href='"+esc(it.liveUrl)+"' target=_blank>View live ↗</a>"
            : "<button class=publish "+(it.flag?'disabled':'')+" onclick=\"window._pub('"+it.key+"',this)\">Publish</button>");
   return "<div class=card><div class=left><h2>"+esc(it.title)+"</h2><div class=meta>"
     + "<span class='pill "+(pub?'published':'draft')+"'>"+(pub?'Published':'Pending')+"</span>"
-    + chips + flag + "<span class=date>"+date+"</span></div></div><div class=right>"+actions+"</div></div>";
+    + chips + flag + date + "</div></div><div class=right>"+actions+"</div></div>";
 }
 window._filter=(k)=>{ FILTER=k; renderTabs(); renderList(); };
 window._login=async()=>{ const email=document.getElementById('em').value; const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}}); document.getElementById('msg').textContent=error?error.message:'Check your inbox for the link.'; };
 window._review=async(key)=>{ try{ const d=await (await api('?action=post&key='+key)).json(); document.getElementById('st').textContent=d.title||'Preview'; document.getElementById('frame').srcdoc=wrap((d.flag?"<div style='background:#fff8e6;border:1px solid #f0d98c;color:#b8860b;padding:10px;border-radius:8px;margin-bottom:16px'>⚑ "+esc(d.flag)+"</div>":"")+"<h1>"+esc(d.title)+"</h1>"+(d.body_html||'')); document.getElementById('panel').classList.add('open'); }catch(e){ alert('Could not load preview: '+(e.message||e)); } };
-window._pub=async(key,btn)=>{ if(!confirm('Publish this post live?'))return; btn.disabled=true;btn.textContent='Publishing…'; try{ const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key})})).json(); if(res.ok){render()}else{alert('Failed: '+(res.error||'?'));btn.disabled=false;btn.textContent='Publish';} }catch(e){ alert('Failed: '+(e.message||e));btn.disabled=false;btn.textContent='Publish'; } };
+window._pub=async(key,btn)=>{
+  if(btn.dataset.armed!=='1'){ btn.dataset.armed='1'; btn.textContent='Confirm?'; btn.classList.add('confirm'); clearTimeout(btn._t); btn._t=setTimeout(()=>{btn.dataset.armed='0';btn.textContent='Publish';btn.classList.remove('confirm');},4000); return; }
+  clearTimeout(btn._t); btn.disabled=true; btn.textContent='Publishing…';
+  const reset=()=>{btn.disabled=false;btn.dataset.armed='0';btn.textContent='Publish';btn.classList.remove('confirm');};
+  try{ const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key})})).json(); if(res.ok){render()}else{alert('Failed: '+(res.error||'?'));reset();} }
+  catch(e){ alert('Failed: '+(e.message||e)); reset(); }
+};
 sb.auth.onAuthStateChange(()=>render());
 render();
 </script></body></html>
