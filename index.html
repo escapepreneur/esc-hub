@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESC Hub · Software Updates</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#24A7A8;--ink:#222;--muted:#777;--amber:#b8860b;--line:#e6e6e6}
+*{box-sizing:border-box}body{font-family:'Poppins',sans-serif;margin:0;color:var(--ink);background:#f7f9f9}
+header{background:var(--teal);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:20px;margin:0;font-weight:600}
+.round{font-size:13px;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:20px}
+.round.ready{background:#fff;color:var(--teal);font-weight:600}
+main{max-width:920px;margin:24px auto;padding:0 16px;display:grid;gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h2{font-size:17px;margin:0 0 8px;font-weight:600}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{font-size:12px;padding:3px 10px;border-radius:20px}.pill.draft{background:#eee;color:#666}.pill.published{background:#e3f5e8;color:#1a7f37}
+.chip{font-size:11px;color:var(--teal);border:1px solid var(--teal);border-radius:20px;padding:2px 8px}.chip.comm{background:var(--teal);color:#fff;border:0}
+.flag{background:#fff8e6;border:1px solid #f0d98c;color:var(--amber);font-size:13px;padding:8px 12px;border-radius:8px;margin:10px 0 0}
+.actions{margin-top:12px;display:flex;gap:10px;align-items:center}
+button{font-family:inherit;font-size:14px;border-radius:8px;padding:8px 16px;border:1px solid var(--teal);cursor:pointer;background:#fff;color:var(--teal)}
+button.publish{background:var(--teal);color:#fff;border:0}button:disabled{opacity:.45;cursor:not-allowed}
+a.live{font-size:13px;color:var(--teal)}
+.login{max-width:380px;margin:12vh auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px;text-align:center}
+.login input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;margin:12px 0}
+.muted{color:var(--muted);font-size:13px}
+.panel{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9}.panel.open{display:flex}
+.sheet{background:#fff;width:min(820px,94vw);height:90vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.sheet .top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+iframe{flex:1;border:0;width:100%}
+</style></head><body>
+<div id="app"></div>
+<div class="panel" id="panel"><div class="sheet"><div class="top"><strong id="st"></strong><button onclick="document.getElementById('panel').classList.remove('open')">✕</button></div><iframe id="frame"></iframe></div></div>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_URL = 'https://gmqysuxbjucyiqfdddzu.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtcXlzdXhianVjeWlxZmRkZHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxODQ0MzUsImV4cCI6MjA5Nzc2MDQzNX0._PmftWsju9T0SiCafVvTm1g8Hq3aV_0Na9gKZbvSxoY';
+const API = SUPABASE_URL + '/functions/v1/hub';
+const sb = createClient(SUPABASE_URL, ANON_KEY);
+const app = document.getElementById('app');
+const wrap = h => "<!doctype html><meta charset=utf-8><link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap' rel=stylesheet><style>body{font-family:Poppins,sans-serif;max-width:720px;margin:24px auto;padding:0 18px;color:#222;font-size:16px;line-height:1.6}h2{font-size:22px;margin-top:1.5em}img{display:block;max-width:100%;height:auto;margin:1.2em auto}</style>"+h;
+const api = async (q,opts={}) => { const {data:{session}}=await sb.auth.getSession(); return fetch(API+q,{...opts,headers:{...(opts.headers||{}),Authorization:'Bearer '+(session?.access_token||'')}}); };
+
+async function render(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ app.innerHTML = "<div class=login><h2 style='color:#24A7A8'>ESC Hub · Software Updates</h2><p class=muted>Sign in with your email — we'll send a magic link.</p><input id=em type=email placeholder='you@escapepreneur.com'><button onclick='window._login()' style='width:100%'>Send magic link</button><p class=muted id=msg></p></div>"; return; }
+  app.innerHTML = "<header><h1>ESC Hub · Software Updates</h1><span id=round class=round>…</span></header><main id=list>Loading…</main>";
+  const q = await (await api('?action=queue')).json();
+  const r=document.getElementById('round'); r.textContent='Community round-up: '+q.communityLive+'/'+q.communityThreshold+' live'; r.className='round'+(q.communityLive>=q.communityThreshold?' ready':'');
+  document.getElementById('list').innerHTML = q.items.map(card).join('');
+}
+function card(it){ const pub=it.status==='Published'; const chips=it.categories.map(c=>'<span class=chip>'+c+'</span>').join('')+(it.community?'<span class="chip comm">Community</span>':'');
+  return "<div class=card><h2>"+it.title+"</h2><div class=row><span class='pill "+(pub?'published':'draft')+"'>"+it.status+"</span>"+chips+"</div>"+(it.flag?"<div class=flag>⚑ "+it.flag+"</div>":"")+"<div class=actions><button onclick=\"window._review('"+it.key+"')\">Review</button>"+(pub?"<a class=live href='"+it.liveUrl+"' target=_blank>View live ↗</a>":"<button class=publish "+(it.flag?'disabled':'')+" onclick=\"window._pub('"+it.key+"',this)\">Publish</button>")+"</div></div>"; }
+window._login=async()=>{ const email=document.getElementById('em').value; const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}}); document.getElementById('msg').textContent=error?error.message:'Check your inbox for the link.'; };
+window._review=async(key)=>{ const d=await (await api('?action=post&key='+key)).json(); document.getElementById('st').textContent=d.title; document.getElementById('frame').srcdoc=wrap((d.flag?"<div style='background:#fff8e6;border:1px solid #f0d98c;color:#b8860b;padding:10px;border-radius:8px;margin-bottom:16px'>⚑ "+d.flag+"</div>":"")+"<h1>"+d.title+"</h1>"+(d.body_html||'')); document.getElementById('panel').classList.add('open'); };
+window._pub=async(key,btn)=>{ if(!confirm('Publish this post live?'))return; btn.disabled=true;btn.textContent='Publishing…'; const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key})})).json(); if(res.ok){render()}else{alert('Failed: '+(res.error||'?'));btn.disabled=false;btn.textContent='Publish';} };
+sb.auth.onAuthStateChange(()=>render());
+render();
+</script></body></html>
