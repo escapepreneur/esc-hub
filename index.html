@@ -54,7 +54,7 @@ const wrap = h => "<!doctype html><meta charset=utf-8><link href='https://fonts.
 const api = async (q,opts={}) => { const {data:{session}}=await sb.auth.getSession(); return fetch(API+q,{...opts,headers:{...(opts.headers||{}),Authorization:'Bearer '+(session?.access_token||'')}}); };
 
 let STATE = { items: [] };
-let FILTER = 'all';
+let FILTER = 'pending';
 
 function loginView(msg){ app.innerHTML = "<div class=login><h2 style='color:#24A7A8'>ESC Hub · Software Updates</h2><p class=muted>Sign in with your email — we'll send a magic link.</p><input id=em type=email placeholder='you@escapepreneur.com'><button onclick='window._login()' style='width:100%'>Send magic link</button><p class=muted id=msg>"+esc(msg)+"</p></div>"; }
 function errorView(e){ app.innerHTML = "<div class=login><h2 style='color:#24A7A8'>ESC Hub · Software Updates</h2><p class=muted>Couldn't load the hub just now.</p><p class=muted>"+esc(e)+"</p><button onclick='location.reload()' style='width:100%'>Reload</button></div>"; }
@@ -86,7 +86,7 @@ async function draw(){
 function renderTabs(){
   const pend = STATE.items.filter(i=>i.status!=='Published').length;
   const publ = STATE.items.filter(i=>i.status==='Published').length;
-  const defs = [['all','All',STATE.items.length],['pending','Pending',pend],['published','Published',publ]];
+  const defs = [['pending','Pending',pend],['published','Published',publ],['all','All',STATE.items.length]];
   document.getElementById('tabs').innerHTML = defs.map(([k,label,n])=>"<button class='tab"+(FILTER===k?' active':'')+"' onclick=\"window._filter('"+k+"')\">"+label+" ("+n+")</button>").join('');
 }
 function ts(i){ return i.status==='Published' ? (i.publishedAt?Date.parse(i.publishedAt):0) : (i.changelogDate?Date.parse(i.changelogDate):0); }
