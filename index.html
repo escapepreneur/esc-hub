@@ -38,9 +38,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .sheet .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
 .sheet .top strong{flex:1;min-width:0;font-size:16px}
 .etitle{flex:1;min-width:0;font-family:inherit;font-size:16px;font-weight:600;padding:7px 10px;border:1px solid var(--line);border-radius:6px}
-.topact{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.topact{display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
 .topact button{font-size:13px;padding:6px 12px}
 .topact button.publish{background:var(--teal);color:#fff;border-color:var(--teal)}
+.topact button.common{background:var(--teal);color:#fff;border-color:var(--teal)}
 .topact button.confirm{background:#c0392b;border-color:#c0392b;color:#fff}
 #flagbar:not(:empty){padding:12px 28px 0}
 #aibar{padding:12px 28px;border-bottom:1px solid var(--line);gap:8px;align-items:center}
@@ -62,6 +63,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <button id="okbtn" class="publish" onclick="window._clearflag()" style="display:none">Mark checked ✓</button>
       <button id="pubbtn" class="publish" onclick="window._pubModal(this)" style="display:none">Publish</button>
       <button id="markbtn" onclick="window._markPublished(this)" style="display:none">Mark as published</button>
+      <button id="unpubbtn" onclick="window._unpublish(this)" style="display:none">Unpublish</button>
+      <button id="commbtn" onclick="window._community(this)" style="display:none">Add to community</button>
       <button id="editbtn" onclick="window._edit()">Edit</button>
       <button id="savebtn" class="publish" onclick="window._save()" style="display:none">Save</button>
       <button id="cancelbtn" onclick="window._cancel()" style="display:none">Cancel</button>
@@ -145,6 +148,9 @@ function setEdit(on){
   $('pubbtn').style.display = (!on && CUR && CUR.editable) ? 'inline-block':'none';
   $('pubbtn').disabled = !!(CUR && CUR.flag);
   $('markbtn').style.display = (!on && CUR && CUR.editable) ? 'inline-block':'none';
+  $('unpubbtn').style.display = (!on && CUR && !CUR.editable) ? 'inline-block':'none';
+  if(!on && CUR){ const cb=$('commbtn'); cb.style.display='inline-block'; cb.textContent=CUR.community?'In community ✓':'Add to community'; cb.classList.toggle('common', !!CUR.community); }
+  else $('commbtn').style.display='none';
   $('editbtn').style.display = on?'none':(CUR&&CUR.editable?'inline-block':'none');
   $('savebtn').style.display = on?'inline-block':'none';
   $('cancelbtn').style.display = on?'inline-block':'none';
@@ -156,7 +162,7 @@ window._login=async()=>{ const email=$('em').value; const {error}=await sb.auth.
 window._close=()=>$('panel').classList.remove('open');
 window._review=async(key,isPub)=>{ try{
   const d=await (await api('?action=post&key='+key)).json();
-  CUR={ key, title:d.title||'', body_html:d.body_html||'', flag:d.flag||null, editable:!isPub };
+  CUR={ key, title:d.title||'', body_html:d.body_html||'', flag:d.flag||null, community:!!d.community, editable:!isPub };
   $('st').textContent=d.title||'Preview';
   $('flagbar').innerHTML = d.flag?"<div style='background:#fff8e6;border:1px solid #f0d98c;color:#b8860b;padding:10px;border-radius:8px'>⚑ "+esc(d.flag)+"</div>":"";
   $('pbody').innerHTML = d.body_html||'';
@@ -190,6 +196,19 @@ window._pubModal=async(btn)=>{
   const reset=()=>{btn.disabled=false;btn.dataset.armed='0';btn.textContent='Publish';btn.classList.remove('confirm');};
   try{ const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key})})).json(); if(res.ok){ window._close(); render(); } else { alert('Publish failed: '+(res.error||'?')); reset(); } }
   catch(e){ alert('Publish failed: '+(e.message||e)); reset(); }
+};
+window._unpublish=async(btn)=>{
+  if(btn.dataset.armed!=='1'){ btn.dataset.armed='1'; btn.textContent='Confirm unpublish?'; btn.classList.add('confirm'); clearTimeout(btn._t); btn._t=setTimeout(()=>{btn.dataset.armed='0';btn.textContent='Unpublish';btn.classList.remove('confirm');},4000); return; }
+  clearTimeout(btn._t); btn.disabled=true; btn.textContent='Unpublishing…';
+  const reset=()=>{btn.disabled=false;btn.dataset.armed='0';btn.textContent='Unpublish';btn.classList.remove('confirm');};
+  try{ const res=await (await api('?action=unpublish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key})})).json(); if(res.ok){ window._close(); render(); } else { alert('Unpublish failed: '+(res.error||'?')); reset(); } }
+  catch(e){ alert('Unpublish failed: '+(e.message||e)); reset(); }
+};
+window._community=async(btn)=>{
+  const next=!CUR.community; btn.disabled=true; const old=btn.textContent; btn.textContent='…';
+  try{ const res=await (await api('?action=save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,community:next})})).json(); if(res.ok){ CUR.community=next; btn.textContent=next?'In community ✓':'Add to community'; btn.classList.toggle('common',next); render(); } else { alert('Failed: '+(res.error||'?')); btn.textContent=old; } }
+  catch(e){ alert('Failed: '+(e.message||e)); btn.textContent=old; }
+  finally{ btn.disabled=false; }
 };
 window._markPublished=async(btn)=>{
   const liveUrl=(prompt('Live URL for this post (where it has been published):','')||'').trim();
