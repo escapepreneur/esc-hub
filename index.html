@@ -41,6 +41,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .topact{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .topact button{font-size:13px;padding:6px 12px}
 .topact button.publish{background:var(--teal);color:#fff;border-color:var(--teal)}
+.topact button.confirm{background:#c0392b;border-color:#c0392b;color:#fff}
 #flagbar:not(:empty){padding:12px 28px 0}
 #aibar{padding:12px 28px;border-bottom:1px solid var(--line);gap:8px;align-items:center}
 #aiinstr{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:14px}
@@ -59,6 +60,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <strong id="st"></strong>
     <div class="topact">
       <button id="okbtn" class="publish" onclick="window._clearflag()" style="display:none">Mark checked ✓</button>
+      <button id="pubbtn" class="publish" onclick="window._pubModal(this)" style="display:none">Publish</button>
       <button id="editbtn" onclick="window._edit()">Edit</button>
       <button id="savebtn" class="publish" onclick="window._save()" style="display:none">Save</button>
       <button id="cancelbtn" onclick="window._cancel()" style="display:none">Cancel</button>
@@ -131,8 +133,7 @@ function card(it){ const pub=it.status==='Published';
   const date = (!pub && it.sourceLink) ? "<a class=clink href='"+esc(it.sourceLink)+"' target=_blank>"+dtxt+" ↗</a>" : "<span class=date>"+dtxt+"</span>";
   const flag = it.flag?"<span class=flagchip>⚑ "+esc(it.flag)+"</span>":"";
   const actions = "<button onclick=\"window._review('"+it.key+"',"+pub+")\">Review</button>"
-    + (pub ? "<a class=live href='"+esc(it.liveUrl)+"' target=_blank>View live ↗</a>"
-           : "<button class=publish "+(it.flag?'disabled':'')+" onclick=\"window._pub('"+it.key+"',this)\">Publish</button>");
+    + (pub ? "<a class=live href='"+esc(it.liveUrl)+"' target=_blank>View live ↗</a>" : "");
   return "<div class=card><div class=left><h2>"+esc(it.title)+"</h2><div class=meta><span class='pill "+(pub?'published':'draft')+"'>"+(pub?'Published':'Pending')+"</span>"+chips+flag+date+"</div></div><div class=right>"+actions+"</div></div>";
 }
 function setEdit(on){
@@ -140,6 +141,8 @@ function setEdit(on){
   $('st').style.display = on?'none':'block';
   $('aibar').style.display = on?'flex':'none';
   $('okbtn').style.display = (!on && CUR && CUR.flag) ? 'inline-block':'none';
+  $('pubbtn').style.display = (!on && CUR && CUR.editable) ? 'inline-block':'none';
+  $('pubbtn').disabled = !!(CUR && CUR.flag);
   $('editbtn').style.display = on?'none':(CUR&&CUR.editable?'inline-block':'none');
   $('savebtn').style.display = on?'inline-block':'none';
   $('cancelbtn').style.display = on?'inline-block':'none';
@@ -158,7 +161,7 @@ window._review=async(key,isPub)=>{ try{
   setEdit(false);
   $('panel').classList.add('open');
 }catch(e){ alert('Could not load preview: '+(e.message||e)); } };
-window._clearflag=async()=>{ const b=$('okbtn'); b.disabled=true; b.textContent='…'; try{ const res=await (await api('?action=save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,flag:null})})).json(); if(res.ok){ CUR.flag=null; $('flagbar').innerHTML=''; b.style.display='none'; render(); } else alert('Failed: '+(res.error||'?')); }catch(e){ alert('Failed: '+(e.message||e)); } finally{ b.disabled=false; b.textContent='Mark checked ✓'; } };
+window._clearflag=async()=>{ const b=$('okbtn'); b.disabled=true; b.textContent='…'; try{ const res=await (await api('?action=save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,flag:null})})).json(); if(res.ok){ CUR.flag=null; $('flagbar').innerHTML=''; b.style.display='none'; $('pubbtn').disabled=false; render(); } else alert('Failed: '+(res.error||'?')); }catch(e){ alert('Failed: '+(e.message||e)); } finally{ b.disabled=false; b.textContent='Mark checked ✓'; } };
 window._aiedit=async()=>{ const instruction=$('aiinstr').value.trim(); if(!instruction)return; const btn=$('aibtn'); btn.disabled=true; btn.textContent='Thinking…'; try{ const res=await (await api('?action=ai-edit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,instruction})})).json(); if(res.error){ alert('AI edit failed: '+res.error); } else { if(res.title) $('etitle').value=res.title; if(res.body_html) $('pbody').innerHTML=res.body_html; $('aiinstr').value=''; } }catch(e){ alert('AI edit failed: '+(e.message||e)); } finally{ btn.disabled=false; btn.textContent='Ask AI'; } };
 window._edit=()=>setEdit(true);
 window._cancel=()=>{ $('pbody').innerHTML = CUR.body_html||''; setEdit(false); };
@@ -178,6 +181,13 @@ window._pub=async(key,btn)=>{
   const reset=()=>{btn.disabled=false;btn.dataset.armed='0';btn.textContent='Publish';btn.classList.remove('confirm');};
   try{ const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key})})).json(); if(res.ok){render()}else{alert('Failed: '+(res.error||'?'));reset();} }
   catch(e){ alert('Failed: '+(e.message||e)); reset(); }
+};
+window._pubModal=async(btn)=>{
+  if(btn.dataset.armed!=='1'){ btn.dataset.armed='1'; btn.textContent='Confirm publish?'; btn.classList.add('confirm'); clearTimeout(btn._t); btn._t=setTimeout(()=>{btn.dataset.armed='0';btn.textContent='Publish';btn.classList.remove('confirm');},4000); return; }
+  clearTimeout(btn._t); btn.disabled=true; btn.textContent='Publishing…';
+  const reset=()=>{btn.disabled=false;btn.dataset.armed='0';btn.textContent='Publish';btn.classList.remove('confirm');};
+  try{ const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key})})).json(); if(res.ok){ window._close(); render(); } else { alert('Publish failed: '+(res.error||'?')); reset(); } }
+  catch(e){ alert('Publish failed: '+(e.message||e)); reset(); }
 };
 sb.auth.onAuthStateChange(()=>render());
 render();
