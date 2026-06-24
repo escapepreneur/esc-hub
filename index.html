@@ -61,6 +61,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <div class="topact">
       <button id="okbtn" class="publish" onclick="window._clearflag()" style="display:none">Mark checked ✓</button>
       <button id="pubbtn" class="publish" onclick="window._pubModal(this)" style="display:none">Publish</button>
+      <button id="markbtn" onclick="window._markPublished(this)" style="display:none">Mark as published</button>
       <button id="editbtn" onclick="window._edit()">Edit</button>
       <button id="savebtn" class="publish" onclick="window._save()" style="display:none">Save</button>
       <button id="cancelbtn" onclick="window._cancel()" style="display:none">Cancel</button>
@@ -143,6 +144,7 @@ function setEdit(on){
   $('okbtn').style.display = (!on && CUR && CUR.flag) ? 'inline-block':'none';
   $('pubbtn').style.display = (!on && CUR && CUR.editable) ? 'inline-block':'none';
   $('pubbtn').disabled = !!(CUR && CUR.flag);
+  $('markbtn').style.display = (!on && CUR && CUR.editable) ? 'inline-block':'none';
   $('editbtn').style.display = on?'none':(CUR&&CUR.editable?'inline-block':'none');
   $('savebtn').style.display = on?'inline-block':'none';
   $('cancelbtn').style.display = on?'inline-block':'none';
@@ -188,6 +190,13 @@ window._pubModal=async(btn)=>{
   const reset=()=>{btn.disabled=false;btn.dataset.armed='0';btn.textContent='Publish';btn.classList.remove('confirm');};
   try{ const res=await (await api('?action=publish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key})})).json(); if(res.ok){ window._close(); render(); } else { alert('Publish failed: '+(res.error||'?')); reset(); } }
   catch(e){ alert('Publish failed: '+(e.message||e)); reset(); }
+};
+window._markPublished=async(btn)=>{
+  const liveUrl=(prompt('Live URL for this post (where it has been published):','')||'').trim();
+  if(!liveUrl) return;
+  btn.disabled=true; const old=btn.textContent; btn.textContent='Marking…';
+  try{ const res=await (await api('?action=mark-published',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,liveUrl})})).json(); if(res.ok){ window._close(); render(); } else { alert('Mark as published failed: '+(res.error||'?')); btn.disabled=false; btn.textContent=old; } }
+  catch(e){ alert('Mark as published failed: '+(e.message||e)); btn.disabled=false; btn.textContent=old; }
 };
 sb.auth.onAuthStateChange(()=>render());
 render();
