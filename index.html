@@ -63,6 +63,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .preview h2{font-size:22px;margin-top:1.5em}
 .preview .labs-callout{background:#eef9f9;border:1px solid #29abab;border-left:5px solid #29abab;border-radius:8px;padding:14px 20px;margin:24px 0}
 .preview[contenteditable=true]{outline:2px solid var(--teal);outline-offset:-4px;background:#fffdf6}
+.rtitlebar{display:flex;align-items:center;gap:10px;padding:12px 28px;border-bottom:1px solid var(--line)}
+.rtitlebar label{font-size:13px;color:var(--muted);flex-shrink:0}
+.rtitlebar input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:14px}
+.rtitlebar button{flex-shrink:0}
 .rgraphic{display:flex;align-items:center;gap:18px;padding:16px 28px;border-bottom:1px solid var(--line);background:#fafdfd}
 .rgraphic img{width:170px;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
 .rgraphic .rgtext{font-size:13px;color:var(--muted);flex:1}
@@ -104,6 +108,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <button onclick="window._rclose()">✕</button>
     </div>
   </div>
+  <div class="rtitlebar"><label>Title</label><input id="rtitle" placeholder="Post title"><button onclick="window._copyTitle(this)">Copy title</button></div>
   <div class="rgraphic">
     <img src="roundup-graphic.webp" alt="ESC Hub Software Updates graphic">
     <div class="rgtext">This graphic goes on every community round-up. Download it, then attach it to your post.<br>
@@ -221,7 +226,9 @@ window._saveSettings=async(btn)=>{
 };
 window._openRoundup=async()=>{
   ROUND={keys:[]};
-  $('rbody').innerHTML='<p class=muted>Composing the round-up in your voice… this takes a few seconds.</p>';
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}).replace(',','');
+  $('rtitle').value='Software Update - '+today;
+  $('rbody').innerHTML='<p class=muted>Composing the round-up… this takes a few seconds.</p>';
   $('rpanel').classList.add('open');
   try{
     const res=await getJSON('?action=roundup-compose',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});
@@ -231,6 +238,7 @@ window._openRoundup=async()=>{
   }catch(e){ $('rbody').innerHTML="<p class=muted>Couldn't compose: "+esc(e.message||e)+"</p>"; }
 };
 window._rclose=()=>$('rpanel').classList.remove('open');
+window._copyTitle=async(btn)=>{ try{ await navigator.clipboard.writeText($('rtitle').value); const o=btn.textContent; btn.textContent='Copied ✓'; setTimeout(()=>btn.textContent=o,2000);}catch(e){ alert('Copy failed: '+(e.message||e)); } };
 window._roundCopy=async()=>{
   const html=$('rbody').innerHTML, text=$('rbody').innerText;
   const b=$('rcopy'); const o=b.textContent;
