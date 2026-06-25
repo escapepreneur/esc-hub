@@ -4,7 +4,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--teal:#29abab;--ink:#222;--muted:#777;--amber:#b8860b;--line:#e6e6e6}
-*{box-sizing:border-box}body{font-family:'Poppins',sans-serif;margin:0;color:var(--ink);background:#f7f9f9}
+*{box-sizing:border-box}body{font-family:'Poppins',sans-serif;margin:0;color:var(--ink);background:#f7f9f9;transition:margin-right .22s ease}
 header{background:var(--teal);color:#fff;padding:0 28px;min-height:60px;display:flex;align-items:center;justify-content:space-between}
 header h1{font-size:20px;margin:0;font-weight:600}
 header button.ghelp{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.65);font-size:13px;padding:7px 16px;font-family:inherit;border-radius:8px;cursor:pointer}
@@ -16,7 +16,7 @@ header button.ghelp{background:rgba(255,255,255,.15);color:#fff;border:1px solid
 .guide .tip{background:#eef9f9;border:1px solid var(--teal);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px}
 #wt{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#fff;box-shadow:-6px 0 24px rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;z-index:20}
 #wt.open{transform:none}
-body.wt-open .shell{padding-right:356px}
+body.wt-open{margin-right:340px}
 #wt .wtop{display:flex;justify-content:space-between;align-items:center;padding:0 16px;min-height:60px;background:var(--teal);color:#fff;flex-shrink:0}
 #wt .wtop strong{font-size:15px}
 #wt .wtop button{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.6);font-size:13px;padding:5px 11px;border-radius:8px;font-family:inherit;cursor:pointer}
@@ -31,7 +31,7 @@ body.wt-open .shell{padding-right:356px}
 #wt .wtfoot{padding:14px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-shrink:0}
 #wt .wtfoot button{flex:1}
 #wt .wtfoot button.primary{background:var(--teal);color:#fff;border-color:var(--teal)}
-@media(max-width:620px){#wt{width:100%}body.wt-open .shell{padding-right:16px}}
+@media(max-width:620px){#wt{width:100%}body.wt-open{margin-right:0}}
 .shell{max-width:1080px;margin:0 auto;display:flex;gap:0;align-items:flex-start}
 .side{width:240px;flex-shrink:0;padding:20px 12px;display:flex;flex-direction:column;gap:8px}
 .navbtn{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 14px;font-size:14px;color:var(--ink);cursor:pointer;font-family:inherit}
@@ -83,6 +83,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #aibar{padding:12px 28px;border-bottom:1px solid var(--line);gap:8px;align-items:center}
 #aiinstr{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:14px}
 #aibar button{flex-shrink:0}
+#imgbar{padding:10px 28px;border-bottom:1px solid var(--line);display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+#imgbar .lbl{font-size:13px;color:var(--muted);width:100%}
+#imgbar .ithumb{display:flex;flex-direction:column;align-items:center;gap:4px}
+#imgbar .ithumb img{width:70px;height:50px;object-fit:cover;border:1px solid var(--line);border-radius:6px}
+#imgbar .ithumb button{font-size:12px;padding:4px 10px}
 .preview{flex:1;overflow:auto;padding:22px 28px;font-size:16px;line-height:1.6;color:#222}
 .preview img{display:block;max-width:100%;height:auto;margin:34px auto}
 .preview h2{font-size:22px;margin-top:1.5em}
@@ -119,6 +124,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </div>
   <div id="flagbar"></div>
   <div id="aibar" style="display:none"><input id="aiinstr" placeholder="Tell the AI what to change… (e.g. shorten the intro, drop the last section, make it warmer)"><button id="aibtn" class="publish" onclick="window._aiedit()">Ask AI</button></div>
+  <div id="imgbar" style="display:none"></div>
+  <input type="file" id="imgfile" accept="image/*" style="display:none" onchange="window._imgPicked()">
   <div id="pbody" class="preview"></div>
 </div></div>
 
@@ -280,7 +287,9 @@ const WT_UPDATES=[
   "Click <strong>Save</strong>.",
   "If you see a <strong>⚑ flag</strong>: check the images, then click <strong>Mark checked ✓</strong>.",
   "Click <strong>Publish</strong>.",
-  "Click <strong>Confirm publish?</strong> &nbsp;It's now live. ✅"
+  "Click <strong>Confirm publish?</strong> &nbsp;It's now live.",
+  "Open the live post (<strong>View live ↗</strong> on the card) and read it over on the site.",
+  "Go to the main blog page and check the image has loaded properly. ✅"
 ];
 const WT_COMMUNITY=[
   "On the left, click <strong>Community posts</strong>.",
@@ -344,6 +353,7 @@ function setEdit(on){
   $('etitle').style.display = on?'block':'none';
   $('st').style.display = on?'none':'block';
   $('aibar').style.display = on?'flex':'none';
+  if(on) renderImgBar(); else $('imgbar').style.display='none';
   $('okbtn').style.display = (!on && CUR && CUR.flag) ? 'inline-block':'none';
   $('pubbtn').style.display = (!on && CUR && CUR.editable) ? 'inline-block':'none';
   $('pubbtn').disabled = !!(CUR && CUR.flag);
@@ -370,6 +380,27 @@ window._review=async(key,isPub)=>{ try{
 }catch(e){ alert('Could not load preview: '+(e.message||e)); } };
 window._clearflag=async()=>{ const b=$('okbtn'); b.disabled=true; b.textContent='…'; try{ const res=await getJSON('?action=save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,flag:null})}); if(res.ok){ CUR.flag=null; $('flagbar').innerHTML=''; b.style.display='none'; $('pubbtn').disabled=false; render(); } else alert('Failed: '+(res.error||'?')); }catch(e){ alert('Failed: '+(e.message||e)); } finally{ b.disabled=false; b.textContent='Mark checked ✓'; } };
 window._aiedit=async()=>{ const instruction=$('aiinstr').value.trim(); if(!instruction)return; const btn=$('aibtn'); btn.disabled=true; btn.textContent='Thinking…'; try{ const res=await getJSON('?action=ai-edit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,instruction})}); if(res.error){ alert('AI edit failed: '+res.error); } else { if(res.title) $('etitle').value=res.title; if(res.body_html) $('pbody').innerHTML=res.body_html; $('aiinstr').value=''; } }catch(e){ alert('AI edit failed: '+(e.message||e)); } finally{ btn.disabled=false; btn.textContent='Ask AI'; } };
+let _imgIdx=-1;
+function renderImgBar(){
+  const ib=$('imgbar'); const imgs=[...$('pbody').querySelectorAll('img')];
+  if(!imgs.length){ ib.style.display='none'; ib.innerHTML=''; return; }
+  ib.style.display='flex';
+  ib.innerHTML="<span class=lbl>Images in this post - click Replace to swap one (e.g. after fixing a logo), then Save:</span>"+
+    imgs.map((im,i)=>"<span class=ithumb><img src='"+esc(im.getAttribute('src'))+"'><button onclick='window._imgReplace("+i+")'>Replace</button></span>").join('');
+}
+window._imgReplace=(i)=>{ _imgIdx=i; const f=$('imgfile'); f.value=''; f.click(); };
+window._imgPicked=async()=>{
+  const f=$('imgfile').files[0]; if(!f) return;
+  const target=[...$('pbody').querySelectorAll('img')][_imgIdx]; if(!target){ alert('Could not find that image.'); return; }
+  const ib=$('imgbar'); ib.style.opacity='.5';
+  try{
+    const dataB64=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(f); });
+    const res=await getJSON('?action=upload-image',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:f.name,dataB64})});
+    if(res.url){ target.setAttribute('src',res.url); renderImgBar(); }
+    else alert('Upload failed: '+(res.error||'?'));
+  }catch(e){ alert('Upload failed: '+(e.message||e)); }
+  finally{ ib.style.opacity='1'; }
+};
 window._edit=()=>setEdit(true);
 window._cancel=()=>{ $('pbody').innerHTML = CUR.body_html||''; setEdit(false); };
 window._save=async()=>{
