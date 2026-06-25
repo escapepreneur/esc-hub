@@ -71,10 +71,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .boot{max-width:380px;margin:14vh auto;text-align:center;color:var(--muted);font-size:14px}
 .panel{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9}.panel.open{display:flex}
 .sheet{background:#fff;width:min(820px,94vw);height:90vh;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
-.sheet .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
-.sheet .top strong{flex:1;min-width:0;font-size:16px}
-.etitle{flex:1;min-width:0;font-family:inherit;font-size:16px;font-weight:600;padding:7px 10px;border:1px solid var(--line);border-radius:6px}
-.topact{display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.sheet .top{display:flex;flex-direction:column;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.sheet .top strong{width:100%;font-size:17px;text-align:center;line-height:1.35}
+.etitle{width:100%;font-family:inherit;font-size:16px;font-weight:600;padding:7px 10px;border:1px solid var(--line);border-radius:6px;text-align:center}
+.topact{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;width:100%}
 .topact button{font-size:13px;padding:6px 12px}
 .topact button.publish{background:var(--teal);color:#fff;border-color:var(--teal)}
 .topact button.common{background:var(--teal);color:#fff;border-color:var(--teal)}
@@ -101,7 +101,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div id="app"><div class="boot">Loading the hub…</div></div>
 
 <!-- Post review modal -->
-<div class="panel" id="panel"><div class="sheet">
+<div class="panel" id="panel" onclick="if(event.target===this)window._close()"><div class="sheet">
   <div class="top">
     <input id="etitle" class="etitle" style="display:none">
     <strong id="st"></strong>
@@ -123,7 +123,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </div></div>
 
 <!-- Community round-up modal -->
-<div class="panel" id="rpanel"><div class="sheet">
+<div class="panel" id="rpanel" onclick="if(event.target===this)window._rclose()"><div class="sheet">
   <div class="top">
     <strong>Community round-up</strong>
     <div class="topact">
