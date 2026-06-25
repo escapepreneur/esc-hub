@@ -88,6 +88,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #imgbar .ithumb{display:flex;flex-direction:column;align-items:center;gap:4px}
 #imgbar .ithumb img{width:70px;height:50px;object-fit:cover;border:1px solid var(--line);border-radius:6px}
 #imgbar .ithumb button{font-size:12px;padding:4px 10px}
+.img-rep-wrap{text-align:center;margin:-14px 0 28px}
+.img-rep{font-family:inherit;font-size:13px;padding:7px 16px;background:var(--teal);color:#fff;border:1px solid var(--teal);border-radius:8px;cursor:pointer}
+.img-rep:disabled{opacity:.6;cursor:default}
 .preview{flex:1;overflow:auto;padding:22px 28px;font-size:16px;line-height:1.6;color:#222}
 .preview img{display:block;max-width:100%;height:auto;margin:34px auto}
 .preview h2{font-size:22px;margin-top:1.5em}
@@ -356,7 +359,7 @@ function setEdit(on){
   $('etitle').style.display = on?'block':'none';
   $('st').style.display = on?'none':'block';
   $('aibar').style.display = on?'flex':'none';
-  if(on) renderImgBar(); else $('imgbar').style.display='none';
+  if(on) injectImgButtons(); else stripImgButtons();
   $('okbtn').style.display = (!on && CUR && CUR.flag) ? 'inline-block':'none';
   $('pubbtn').style.display = (!on && CUR && CUR.editable) ? 'inline-block':'none';
   $('pubbtn').disabled = !!(CUR && CUR.flag);
@@ -382,38 +385,44 @@ window._review=async(key,isPub)=>{ try{
   $('panel').classList.add('open');
 }catch(e){ alert('Could not load preview: '+(e.message||e)); } };
 window._clearflag=async()=>{ const b=$('okbtn'); b.disabled=true; b.textContent='…'; try{ const res=await getJSON('?action=save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,flag:null})}); if(res.ok){ CUR.flag=null; $('flagbar').innerHTML=''; b.style.display='none'; $('pubbtn').disabled=false; render(); } else alert('Failed: '+(res.error||'?')); }catch(e){ alert('Failed: '+(e.message||e)); } finally{ b.disabled=false; b.textContent='Mark checked ✓'; } };
-window._aiedit=async()=>{ const instruction=$('aiinstr').value.trim(); if(!instruction)return; const btn=$('aibtn'); btn.disabled=true; btn.textContent='Thinking…'; try{ const res=await getJSON('?action=ai-edit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,instruction})}); if(res.error){ alert('AI edit failed: '+res.error); } else { if(res.title) $('etitle').value=res.title; if(res.body_html) $('pbody').innerHTML=res.body_html; $('aiinstr').value=''; } }catch(e){ alert('AI edit failed: '+(e.message||e)); } finally{ btn.disabled=false; btn.textContent='Ask AI'; } };
+window._aiedit=async()=>{ const instruction=$('aiinstr').value.trim(); if(!instruction)return; const btn=$('aibtn'); btn.disabled=true; btn.textContent='Thinking…'; try{ const res=await getJSON('?action=ai-edit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,instruction})}); if(res.error){ alert('AI edit failed: '+res.error); } else { if(res.title) $('etitle').value=res.title; if(res.body_html){ $('pbody').innerHTML=res.body_html; injectImgButtons(); } $('aiinstr').value=''; } }catch(e){ alert('AI edit failed: '+(e.message||e)); } finally{ btn.disabled=false; btn.textContent='Ask AI'; } };
 let _imgIdx=-1;
-function renderImgBar(){
-  const ib=$('imgbar'); const imgs=[...$('pbody').querySelectorAll('img')];
-  if(!imgs.length){ ib.style.display='none'; ib.innerHTML=''; return; }
-  ib.style.display='flex';
-  ib.innerHTML="<span class=lbl>Images in this post - click Replace to swap one (e.g. after fixing a logo), then Save:</span>"+
-    imgs.map((im,i)=>"<span class=ithumb><img src='"+esc(im.getAttribute('src'))+"'><button onclick='window._imgReplace("+i+")'>Replace</button></span>").join('');
+// In edit mode, drop a "Replace this image" button directly under each image in the
+// post (full size, in context). They're marked contenteditable=false and stripped
+// from the HTML before saving so they never end up in the post body.
+function injectImgButtons(){
+  stripImgButtons();
+  [...$('pbody').querySelectorAll('img')].forEach((im,i)=>{
+    const w=document.createElement('div'); w.className='img-rep-wrap'; w.contentEditable='false';
+    w.innerHTML="<button type=button class=img-rep onclick='window._imgReplace("+i+")'>↻ Replace this image</button>";
+    im.insertAdjacentElement('afterend', w);
+  });
 }
+function stripImgButtons(){ [...$('pbody').querySelectorAll('.img-rep-wrap')].forEach((w)=>w.remove()); }
 window._imgReplace=(i)=>{ _imgIdx=i; const f=$('imgfile'); f.value=''; f.click(); };
 window._imgPicked=async()=>{
   const f=$('imgfile').files[0]; if(!f) return;
   const target=[...$('pbody').querySelectorAll('img')][_imgIdx]; if(!target){ alert('Could not find that image.'); return; }
-  const ib=$('imgbar'); ib.style.opacity='.5';
+  const btn=target.nextElementSibling && target.nextElementSibling.querySelector('.img-rep'); const o=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Uploading…'; }
   try{
     const dataB64=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(f); });
     const res=await getJSON('?action=upload-image',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:f.name,dataB64})});
-    if(res.url){ target.setAttribute('src',res.url); renderImgBar(); }
-    else alert('Upload failed: '+(res.error||'?'));
-  }catch(e){ alert('Upload failed: '+(e.message||e)); }
-  finally{ ib.style.opacity='1'; }
+    if(res.url){ target.setAttribute('src',res.url); if(btn){ btn.disabled=false; btn.textContent='Replaced ✓ - now Save'; } }
+    else { alert('Upload failed: '+(res.error||'?')); if(btn){ btn.disabled=false; btn.textContent=o; } }
+  }catch(e){ alert('Upload failed: '+(e.message||e)); if(btn){ btn.disabled=false; btn.textContent=o; } }
 };
 window._edit=()=>setEdit(true);
 window._cancel=()=>{ $('pbody').innerHTML = CUR.body_html||''; setEdit(false); };
 window._save=async()=>{
+  stripImgButtons(); // never persist the Replace buttons into the post body
   const title=$('etitle').value.trim(); const body=$('pbody').innerHTML;
   const b=$('savebtn'); b.disabled=true; b.textContent='Saving…';
   try{
     const res=await getJSON('?action=save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:CUR.key,title,body_html:body})});
     if(res.ok){ CUR.title=title; CUR.body_html=body; $('st').textContent=title; setEdit(false); render(); }
-    else alert('Save failed: '+(res.error||'?'));
-  }catch(e){ alert('Save failed: '+(e.message||e)); }
+    else { alert('Save failed: '+(res.error||'?')); injectImgButtons(); }
+  }catch(e){ alert('Save failed: '+(e.message||e)); injectImgButtons(); }
   finally{ b.disabled=false; b.textContent='Save'; }
 };
 window._pubModal=async(btn)=>{
