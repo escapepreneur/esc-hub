@@ -272,22 +272,26 @@ window._openRoundup=async()=>{
 };
 window._rclose=()=>$('rpanel').classList.remove('open');
 const WT_UPDATES=[
-  "Open the <strong>Software updates</strong> section on the left. New posts are under the <strong>Pending</strong> tab.",
-  "Click <strong>Review</strong> on a post to read it (you'll see its images).",
-  "Need changes? Click <strong>Edit</strong>, then either type an instruction in the <strong>Ask AI</strong> box (e.g. \"shorten the intro\") and click <strong>Ask AI</strong>, or edit the text yourself. Click <strong>Save</strong>.",
-  "See a <strong>⚑ flag</strong>? Check the post's images. When it's fine, click <strong>Mark checked ✓</strong>. (Publish stays locked until you do.)",
-  "Click <strong>Publish</strong>, then <strong>Confirm publish?</strong>. It goes live on the website automatically.",
-  "Optional: if it's worth sharing in the community later, click <strong>Add to community</strong> while reviewing it."
+  "On the left, click <strong>Software updates</strong>.",
+  "In the <strong>Pending</strong> tab, pick a post and click <strong>Review</strong>.",
+  "Read it through.",
+  "Happy as-is? Skip ahead. Want changes? Click <strong>Edit</strong>.",
+  "Type the change in <strong>Ask AI</strong> and click <strong>Ask AI</strong> — or edit the text yourself.",
+  "Click <strong>Save</strong>.",
+  "If you see a <strong>⚑ flag</strong>: check the images, then click <strong>Mark checked ✓</strong>.",
+  "Click <strong>Publish</strong>.",
+  "Click <strong>Confirm publish?</strong> &nbsp;It's now live. ✅"
 ];
 const WT_COMMUNITY=[
-  "Click <strong>Community posts</strong> on the left, then <strong>Review round-up</strong>. Give it a few seconds to draft the post.",
-  "Read it over. Edit anything directly, or click <strong>Regenerate</strong> for a fresh version.",
-  "Click <strong>Download image</strong> to save the graphic.",
-  "Click <strong>Open community ↗</strong> and start a new post in the group.",
-  "Click <strong>Copy title</strong>, then paste it into the post's title box.",
-  "Click <strong>Copy post text</strong>, paste it into the post body, and attach the image you downloaded.",
+  "On the left, click <strong>Community posts</strong>.",
+  "Click <strong>Review round-up</strong> and wait a moment for the draft.",
+  "Read it. Tweak it if you like, or click <strong>Regenerate</strong>.",
+  "Click <strong>Download image</strong>.",
+  "Click <strong>Open community ↗</strong> and start a new post.",
+  "Click <strong>Copy title</strong>, then paste it into the title box.",
+  "Click <strong>Copy post text</strong>, paste it into the body, and attach the image.",
   "Post it in the community.",
-  "Come back here and click <strong>Mark as posted</strong>, then <strong>Confirm — posted?</strong>. The counter resets, ready for next time."
+  "Back here, click <strong>Mark as posted</strong>, then <strong>Confirm — posted?</strong> &nbsp;Done. ✅"
 ];
 let WT={flow:null,step:0};
 function renderWT(){
