@@ -350,6 +350,9 @@ window._roundPosted=async(btn)=>{
 
 // --- Post review modal ---
 function setEdit(on){
+  // Reset any leftover transient state on the shared action buttons (e.g. a
+  // previous post left Publish stuck on "Publishing…"/"Confirm?"), so each post opens clean.
+  [['pubbtn','Publish'],['unpubbtn','Unpublish'],['okbtn','Mark checked ✓'],['markbtn','Mark as published']].forEach(([id,label])=>{ const b=$(id); if(!b)return; b.disabled=false; b.dataset.armed='0'; b.classList.remove('confirm'); clearTimeout(b._t); b.textContent=label; });
   $('etitle').style.display = on?'block':'none';
   $('st').style.display = on?'none':'block';
   $('aibar').style.display = on?'flex':'none';
