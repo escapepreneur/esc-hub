@@ -5,7 +5,7 @@
 <style>
 :root{--teal:#29abab;--ink:#222;--muted:#777;--amber:#b8860b;--line:#e6e6e6}
 *{box-sizing:border-box}body{font-family:'Poppins',sans-serif;margin:0;color:var(--ink);background:#f7f9f9}
-header{background:var(--teal);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between}
+header{background:var(--teal);color:#fff;padding:0 28px;min-height:60px;display:flex;align-items:center;justify-content:space-between}
 header h1{font-size:20px;margin:0;font-weight:600}
 header button.ghelp{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.65);font-size:13px;padding:7px 16px;font-family:inherit;border-radius:8px;cursor:pointer}
 .guide h3{color:var(--teal);font-size:17px;margin:20px 0 6px}
@@ -14,10 +14,10 @@ header button.ghelp{background:rgba(255,255,255,.15);color:#fff;border:1px solid
 .guide ol{margin:0 0 6px;padding-left:22px}
 .guide li{margin:8px 0;line-height:1.55}
 .guide .tip{background:#eef9f9;border:1px solid var(--teal);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px}
-#wt{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#fff;border-left:1px solid var(--line);box-shadow:-6px 0 24px rgba(0,0,0,.10);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;z-index:20}
+#wt{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#fff;box-shadow:-6px 0 24px rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;z-index:20}
 #wt.open{transform:none}
 body.wt-open .shell{padding-right:356px}
-#wt .wtop{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--teal);color:#fff;flex-shrink:0}
+#wt .wtop{display:flex;justify-content:space-between;align-items:center;padding:0 16px;min-height:60px;background:var(--teal);color:#fff;flex-shrink:0}
 #wt .wtop strong{font-size:15px}
 #wt .wtop button{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.6);font-size:13px;padding:5px 11px;border-radius:8px;font-family:inherit;cursor:pointer}
 #wt .wtbody{flex:1;overflow:auto;padding:18px 16px}
