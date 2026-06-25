@@ -14,6 +14,24 @@ header button.ghelp{background:rgba(255,255,255,.15);color:#fff;border:1px solid
 .guide ol{margin:0 0 6px;padding-left:22px}
 .guide li{margin:8px 0;line-height:1.55}
 .guide .tip{background:#eef9f9;border:1px solid var(--teal);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px}
+#wt{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#fff;border-left:1px solid var(--line);box-shadow:-6px 0 24px rgba(0,0,0,.10);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;z-index:20}
+#wt.open{transform:none}
+body.wt-open .shell{padding-right:356px}
+#wt .wtop{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--teal);color:#fff;flex-shrink:0}
+#wt .wtop strong{font-size:15px}
+#wt .wtop button{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.6);font-size:13px;padding:5px 11px;border-radius:8px;font-family:inherit;cursor:pointer}
+#wt .wtbody{flex:1;overflow:auto;padding:18px 16px}
+.wtprog{font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600}
+.wtbar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.wtbar i{display:block;height:100%;background:var(--teal);transition:width .2s}
+.wtstep{font-size:15px;line-height:1.65;color:var(--ink)}
+.wtstep strong{font-weight:600}
+.wtlead{color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 14px}
+.wtchoose button{display:block;width:100%;margin:10px 0;padding:14px;text-align:left;font-size:14px;font-weight:600}
+#wt .wtfoot{padding:14px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-shrink:0}
+#wt .wtfoot button{flex:1}
+#wt .wtfoot button.primary{background:var(--teal);color:#fff;border-color:var(--teal)}
+@media(max-width:620px){#wt{width:100%}body.wt-open .shell{padding-right:16px}}
 .shell{max-width:1080px;margin:0 auto;display:flex;gap:0;align-items:flex-start}
 .side{width:240px;flex-shrink:0;padding:20px 12px;display:flex;flex-direction:column;gap:8px}
 .navbtn{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 14px;font-size:14px;color:var(--ink);cursor:pointer;font-family:inherit}
@@ -125,38 +143,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div id="rbody" class="preview" contenteditable="true"></div>
 </div></div>
 
-<!-- Guide modal -->
-<div class="panel" id="gpanel"><div class="sheet">
-  <div class="top"><strong>How to use the hub</strong><div class="topact"><button onclick="window._gclose()">✕</button></div></div>
-  <div class="preview guide">
-    <h3>Software updates — review &amp; publish</h3>
-    <p class="lead">New posts are drafted for you automatically. Your job is to check them and publish.</p>
-    <ol>
-      <li>Open the <strong>Software updates</strong> section (left). New posts sit under the <strong>Pending</strong> tab.</li>
-      <li>Click <strong>Review</strong> on a post to read it, with its images.</li>
-      <li>To change anything, click <strong>Edit</strong>. Either type a plain-English instruction in the <strong>Ask AI</strong> box (e.g. "shorten the intro" or "make the ending warmer") and click <strong>Ask AI</strong>, or edit the text directly. Click <strong>Save</strong> when done.</li>
-      <li>If a post has a <strong>⚑ flag</strong>, it means an image might show something it shouldn't. Check the images. Once it's fine, click <strong>Mark checked ✓</strong>. (Publish stays locked until the flag is cleared.)</li>
-      <li>When you're happy, click <strong>Publish</strong>, then <strong>Confirm publish?</strong>. It goes live on the website automatically and moves to the <strong>Published</strong> tab.</li>
-      <li>If an update is worth sharing in the community group later, click <strong>Add to community</strong> while reviewing it.</li>
-    </ol>
-    <p class="lead">Other buttons you'll see: <strong>View live ↗</strong> opens the published post on the site. <strong>Mark as published</strong> is for posts you've put live somewhere by hand (it asks for the link). <strong>Unpublish</strong> takes a live post back to Pending.</p>
-
-    <h3>Community posts — the round-up</h3>
-    <p class="lead">Every so often you post a round-up of recent updates into the community group. The hub gets it all ready; you do the actual posting.</p>
-    <div class="tip">You'll get an <strong>email</strong> the moment a round-up is ready. You can also tell at a glance: the <strong>Community posts</strong> tab shows a number, and it turns <strong>red</strong> when it's time.</div>
-    <ol>
-      <li>Click <strong>Community posts</strong> (left), then <strong>Review round-up</strong> on the card. The hub writes the post for you (a few seconds).</li>
-      <li>Read it over. Edit anything directly, or click <strong>Regenerate</strong> for a fresh version.</li>
-      <li>Click <strong>Download image</strong> to save the graphic.</li>
-      <li>Click <strong>Open community ↗</strong> to open the group in a new tab, and start a new post there.</li>
-      <li>Click <strong>Copy title</strong> in the hub, paste it into the post's title box.</li>
-      <li>Click <strong>Copy post text</strong> in the hub, paste it into the post body. Attach the image you downloaded.</li>
-      <li>Post it in the community.</li>
-      <li>Come back to the hub and click <strong>Mark as posted</strong>, then <strong>Confirm — posted?</strong>. Those updates drop off and the counter resets ready for the next batch.</li>
-    </ol>
-    <p class="lead">The setting at the bottom of that screen controls how many updates trigger a round-up (currently 5). Change the number and click Save if you ever want it higher or lower.</p>
-  </div>
-</div></div>
+<!-- Walkthrough rail (docked right, stays open while you work) -->
+<div id="wt">
+  <div class="wtop"><strong>Walkthrough</strong><button onclick="window._wtClose()">Close ✕</button></div>
+  <div class="wtbody" id="wtbody"></div>
+  <div class="wtfoot" id="wtfoot" style="display:none"></div>
+</div>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -279,8 +271,50 @@ window._openRoundup=async()=>{
   }catch(e){ $('rbody').innerHTML="<p class=muted>Couldn't compose: "+esc(e.message||e)+"</p>"; }
 };
 window._rclose=()=>$('rpanel').classList.remove('open');
-window._guide=()=>$('gpanel').classList.add('open');
-window._gclose=()=>$('gpanel').classList.remove('open');
+const WT_UPDATES=[
+  "Open the <strong>Software updates</strong> section on the left. New posts are under the <strong>Pending</strong> tab.",
+  "Click <strong>Review</strong> on a post to read it (you'll see its images).",
+  "Need changes? Click <strong>Edit</strong>, then either type an instruction in the <strong>Ask AI</strong> box (e.g. \"shorten the intro\") and click <strong>Ask AI</strong>, or edit the text yourself. Click <strong>Save</strong>.",
+  "See a <strong>⚑ flag</strong>? Check the post's images. When it's fine, click <strong>Mark checked ✓</strong>. (Publish stays locked until you do.)",
+  "Click <strong>Publish</strong>, then <strong>Confirm publish?</strong>. It goes live on the website automatically.",
+  "Optional: if it's worth sharing in the community later, click <strong>Add to community</strong> while reviewing it."
+];
+const WT_COMMUNITY=[
+  "Click <strong>Community posts</strong> on the left, then <strong>Review round-up</strong>. Give it a few seconds to draft the post.",
+  "Read it over. Edit anything directly, or click <strong>Regenerate</strong> for a fresh version.",
+  "Click <strong>Download image</strong> to save the graphic.",
+  "Click <strong>Open community ↗</strong> and start a new post in the group.",
+  "Click <strong>Copy title</strong>, then paste it into the post's title box.",
+  "Click <strong>Copy post text</strong>, paste it into the post body, and attach the image you downloaded.",
+  "Post it in the community.",
+  "Come back here and click <strong>Mark as posted</strong>, then <strong>Confirm — posted?</strong>. The counter resets, ready for next time."
+];
+let WT={flow:null,step:0};
+function renderWT(){
+  const steps = WT.flow==='updates'?WT_UPDATES:WT.flow==='community'?WT_COMMUNITY:null;
+  let body, foot='';
+  if(!steps){
+    body="<p class=wtlead>What are you doing? Pick one and I'll walk you through it, step by step. This panel stays open while you work.</p>"+
+      "<div class=wtchoose><button class=primary onclick=\"window._wtFlow('updates')\">Publish software updates</button>"+
+      "<button class=primary onclick=\"window._wtFlow('community')\">Post a community round-up</button></div>";
+  } else if(WT.step>=steps.length){
+    body="<div class=wtstep><p><strong>All done. 🎉</strong></p><p>That's the whole flow.</p></div>";
+    foot="<button onclick='window._wtHome()'>Start again</button><button class=primary onclick='window._wtClose()'>Close</button>";
+  } else {
+    const n=steps.length,i=WT.step;
+    body="<div class=wtprog>Step "+(i+1)+" of "+n+"</div><div class=wtbar><i style='width:"+Math.round((i/n)*100)+"%'></i></div><div class=wtstep>"+steps[i]+"</div>";
+    foot=(i>0?"<button onclick='window._wtBack()'>Back</button>":"<button onclick='window._wtHome()'>⟵ Menu</button>")+
+         "<button class=primary onclick='window._wtNext()'>"+(i===n-1?"Finish ✓":"I've done that ✓")+"</button>";
+  }
+  $('wtbody').innerHTML=body;
+  const f=$('wtfoot'); f.innerHTML=foot; f.style.display=foot?'flex':'none';
+}
+window._guide=()=>{ WT={flow:null,step:0}; renderWT(); $('wt').classList.add('open'); document.body.classList.add('wt-open'); };
+window._wtClose=()=>{ $('wt').classList.remove('open'); document.body.classList.remove('wt-open'); };
+window._wtHome=()=>{ WT={flow:null,step:0}; renderWT(); };
+window._wtFlow=(f)=>{ WT={flow:f,step:0}; renderWT(); };
+window._wtNext=()=>{ WT.step++; renderWT(); };
+window._wtBack=()=>{ WT.step=Math.max(0,WT.step-1); renderWT(); };
 window._copyTitle=async(btn)=>{ try{ await navigator.clipboard.writeText($('rtitle').value); const o=btn.textContent; btn.textContent='Copied ✓'; setTimeout(()=>btn.textContent=o,2000);}catch(e){ alert('Copy failed: '+(e.message||e)); } };
 window._roundCopy=async()=>{
   const html=$('rbody').innerHTML, text=$('rbody').innerText;
